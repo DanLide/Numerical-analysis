@@ -1,62 +1,53 @@
-'''
-Author: DanLide
-Date: 10.2019
+from numpy import allclose, dot, zeros
 
-A program applies Gauss method with a column-wise selection of the main element to the extended matrix
-Finds solution of system of linear equations in the form of a vector X
-Checks Ax = b condition
-'''
-import numpy as np
+eps = 10e-8
 
 def matrix_max_row(matrix, n):
     '''
     matrix_max_row(matrix, n)
-    Finds the largest element in a current column and rearranges the rows.
+    Знаходить найбільший елемент у стопці і міняє рядки місцями.
+    Якщо головний елемент меньше за eps, то алгоритм завершує роботу
 
-    Helps avoid rounding inaccuracy and division by zero.
+    Допомагає уникнути ділення на нуль і зменшити вплив похибок заокруглень.
+    
+    Повертає розширену матрицю А.
 
     '''
     max_element = matrix[n][n]
     max_row = n
 
+    if n == len(matrix) - 1:
+        if abs(max_element) < eps:
+            print('The system does not have a clear solution\n')
+            return
+
     for i in range(n + 1, len(matrix)):
         if abs(matrix[i][n]) > abs(max_element):
             max_element = matrix[i][n]
             max_row = i
-        if max_element == 0:
+        if abs(max_element) < eps:
+            print('The system does not have a clear solution\n')
             return None
         if max_row != n:
             matrix[n], matrix[max_row] = matrix[max_row], matrix[n]
             break
     return matrix
 
-def is_singular(matrix):
-    '''
-    is_singular(matrix)
-    Return True if the matrix is singular;
-    Else returns False
-
-    '''
-    flag = False
-    for i in range(len(matrix)):
-        if not matrix[i][i]:
-            flag = True
-    return flag
 
 def gauss_func(matrix):
     '''
     gauss_func(matrix)
-    Applies the Gauss method with a column-wise selection of the main element to the extended matrix A.
+    Застосовує метод Гауса з постовпцевим вибором головного елемента до розширеної матриці А.
 
-    Returns a solution in the form of a vector X
+    Повертає розв'язок у вигляді вектора X.
 
     '''
 
     n = len(matrix)
     det = 1.0
 
-    # Direct stroke
-    for k in range(n - 1):
+    # Прямий хід
+    for k in range(n):
         matrix = matrix_max_row(matrix, k)
         if matrix == None:
             return
@@ -66,25 +57,19 @@ def gauss_func(matrix):
             for j in range(k, n):
                 matrix[i][j] += m * matrix[k][j]
 
-    if is_singular(matrix):
-        print('The system has an infinite number of solutions')
-        print('Determinant: 0')
-        return
-
-    # Calculating determinant
+    # Розрахунок визначника
     for i in range(n):
         det *= matrix[i][i]
-    print(f'Determinant: {abs(det)}')
+    print(f'Determinant: {det}')
 
-    # Return stroke
+    # Зворотній хід
     for k in range(n - 1, -1, -1):
         x[k] = (matrix[k][-1] - sum([matrix[k][j] * x[j] for j in range(k + 1, n)])) / matrix[k][k]
     return x
 
 if __name__ == "__main__":
 
-    # First part
-    fp = open('test.txt')
+    fp = open("/home/danlide/stuDYING/NM/Numerical-analysis/Gauss_method/test.txt")
 
     for i in range(4):
         j = 0
@@ -93,6 +78,7 @@ if __name__ == "__main__":
         b = list()
         current_line = fp.readline()
 
+        # Зчитування матриці з файлу та запис у змінну
         while current_line != 'n\n':
             A.append(list(map(float, current_line.split())))
             current_line = fp.readline()
@@ -105,18 +91,13 @@ if __name__ == "__main__":
             print(row)
         print()
 
-        x = np.zeros(len(A))
-        print('My solution:')
+        x = zeros(len(A))
+        print('Solution:')
         x1 = gauss_func(A)
 
         if x.any() != 0:
             for i in range(len(x1)):
                 print(f'x{i + 1} = {x1[i]}')
-            print(f'Is solution correct? {np.allclose(np.dot(a, x1), b)}\n')
-            print('Third-party library:')
-            x2 = np.linalg.solve(a, b)
-            print(f'Determinant: {np.linalg.det(a)}')
-            for i in range(len(x2)):
-                print(f'x{i + 1} = {x2[i]}')
-            print(f'Is solution correct? {np.allclose(np.dot(a, x2), b)}')
+            print(f'Is solution correct? {allclose(dot(a, x1), b)}\n\n')
+
     fp.close()
