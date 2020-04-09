@@ -1,84 +1,124 @@
-'''
-Author: DanLide
-Date: 10.2019
+from numpy import allclose, dot, zeros, linalg
+import copy
 
-A program applies LU decomposition to find solution of system of linear equations
-Finds L, U matrixes and solution in the form of a vector X
-Checks main minors != 0 condition while decomposing
-Checks Ax = b condition
-'''
+def find_minor_matrix(A, i, j):
+    '''
+    find_minor_matrix(A, i, j)
+    Знаходить матрицю для доповнювального мінору.
+    Приймає на вхід матрицю А, з якої треба вилучити i-ий рядок та j-ий стовпець.
+ 
+    Повертає матрицю M.
+    '''
+    M = copy.deepcopy(A)
+    del M[i]
+    for i in range(len(A[0]) - 1):
+        del M[i][j]
+    return M   
+    
+def find_det(A):
+    '''
+    find_det(A)
+    Рекурсивно знаходить визначник матриці А, використовуючи формулу розкладання за першим рядком.
 
-import numpy as np
+    Повертає число -- визначник матриці А.
+    '''
+    m = len(A)
+    n = len(A[0]) 
+    if m != n:
+        return None
+    if n == 1:
+        return A[0][0]
+    signum = 1
+    determinant = 0
+    # формула розкладання за першим рядком
+    for j in range(n):
+        determinant += A[0][j]*signum*find_det(find_minor_matrix(A, 0, j)) 
+        signum *= -1
+    return determinant
 
 def check_minors(matrix_a):
+    '''
+    check_minors(matrix_a)
+    Знаходить головні мінори матриці А та перевіряє, чи відмінні вони від нуля.
+ 
+    Повертає True, якщо всі головні мінори матриці А відмінні від нуля.
+    Інакше, повертає False.
+    '''
     length = len(matrix_a)
-    l = list()
+    minor = list()
 
     for counter in range(1, length + 1):
+        # Створення матриці головного мінора шляхом виключення n - k останніх рядків і стовпців з матриці А,
+        # де n -- порядок матриці А, а k -- порядок головного мінора
         for i in range(counter):
-            l.append([])
+            minor.append([])
             for j in range(counter):
-                l[i].append(a[i][j])
+                minor[i].append(a[i][j])
 
-        print('Minor:')
-        for line in l:
+        print('Minor\'s matrix:')
+        for line in minor:
             for col in line:
                 print(col, end=' ')
             print()
 
-        det = np.linalg.det(l)
+        det = find_det(minor)
         print(f'Determinant: {det}\n')
 
         if det == 0:
             return False
-        l = list()
+        minor = list()
 
     return True
 
 def lu_decomposition(matrix_a, matrix_b):
+    '''
+    lu_decomposition(matrix_a, matrix_b)
+    Знаходить розв'язок СЛАР використовуючи метод LU-розкладу
+ 
+    Повертає розв'язок у формі вектора x
+    '''
     if check_minors(matrix_a) == False:
         return None
 
     n = len(matrix_a)
 
-    lower = np.zeros((n, n))
-    upper = np.zeros((n, n))
+    lower = zeros((n, n))
+    upper = zeros((n, n))
 
-    # Decomposing matrix into Upper
-    # and Lower triangular matrix
+    # Вводимо заміну A = LU
+    # Знаходимо верхню та нижню трикутні матриці
     for s in range(n):
-        # Upper Triangular
+        # Верхня трикутна матриця
         for j in range(s, n):
-            sum = 0;
+            sum = 0
             for k in range(s):
                 sum += (lower[s][k] * upper[k][j])
 
             upper[s][j] = matrix_a[s][j] - sum
 
-        # Lower Triangular
+        # Нижня трикутна матриця
         for i in range(s + 1, n):
-                sum = 0
-                for k in range(s):
-                    sum += (lower[i][k] * upper[k][s])
+            sum = 0
+            for k in range(s):
+                sum += (lower[i][k] * upper[k][s])
 
-                lower[i][s] = (matrix_a[i][s] - sum) / upper[s][s]
-    print('L:')
-    print(lower)
-    print()
-    print('U:')
-    print(upper)
-    print()
+            lower[i][s] = (matrix_a[i][s] - sum) / upper[s][s]
 
-	# Perform substitution Ly = b
-    y = np.zeros(n)
+    print(f'L:\n{lower}\n')
+    print(f'U\n{upper}\n')
+
+    # Отже, вираз набуває вигляду LUx = b
+    # Вводимо заміну Ux = y
+	# Тоді маємо Ly = b, звідси знаходимо y
+    y = zeros(n)
     for i in range(n):
         sum = 0
         for s in range(i):
             sum += lower[i][s]*y[s]
         y[i] = b[i] - sum
 
-	# Perform substitution Ux = y
-    x = np.zeros(n)
+	# Повертаємося до виразу Ux = y, знаходимо x
+    x = zeros(n)
     for i in range(n - 1, -1, -1):
         sum = 0
         for s in range(i + 1, n):
@@ -88,7 +128,7 @@ def lu_decomposition(matrix_a, matrix_b):
     return x
 
 if __name__ == "__main__":
-    fp = open('test1.txt')
+    fp = open('/home/danlide/stuDYING/NM/Numerical-analysis/LU_decomposition/test1.txt')
 
     for i in range(3):
         j = 0
@@ -97,6 +137,7 @@ if __name__ == "__main__":
         b = list()
         current_line = fp.readline()
 
+        # Зчитуємо матриці з файлу
         while current_line != 'n\n':
             A.append(list(map(float, current_line.split())))
             current_line = fp.readline()
@@ -114,8 +155,5 @@ if __name__ == "__main__":
             print('LU decomposition is impossible\n')
         elif x.any() != 0:
             print(f'Solution:\n{x}')
-            print(f'Is solution correct? {np.allclose(np.dot(a, x), b)}')
-            print('Third-party library:')
-            print(np.linalg.solve(a, b))
-            print()
+            print(f'Is solution correct? {allclose(dot(a, x), b)}\n')
     fp.close()
