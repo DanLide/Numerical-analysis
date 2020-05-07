@@ -69,7 +69,7 @@ def gauss_func(matrix):
 
 if __name__ == "__main__":
 
-    fp = open("/home/danlide/stuDYING/NM/Numerical-analysis/Gauss_method/test.txt")
+    fp = open("test.txt")
 
     for i in range(4):
         j = 0

@@ -1,12 +1,3 @@
-'''
-Author: DanLide
-Date: 10.2019
-
-A program applies iterative Seidel method to find solution of system of linear equations.
-Can be applied to any matrix with non-zero elements on the diagonals, convergence is only guaranteed if the matrix is either diagonally dominant, or symmetric and positive definite.
-Checks Ax = b condition
-'''
-
 import numpy as np
 
 EPS = 1e-6
@@ -41,7 +32,7 @@ def seidel_method(matrix_a, matrix_b):
     return x, iteration, error, True
 
 if __name__ == "__main__":
-    fp = open('test2.txt')
+    fp = open('test.txt')
     print(f'For EPS = {EPS}:')
 
     for i in range(2):
